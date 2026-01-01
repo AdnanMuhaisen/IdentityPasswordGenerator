@@ -24,17 +24,15 @@ public class PasswordGenerator : IPasswordGenerator
     /// </summary>
     public const string Digits = "0123456789";
 
-    private static readonly Requirement[] Requirements =
-        new Requirement[]
-        {
-            new(NonAlphanumerics, nameof(PasswordOptions.RequireNonAlphanumeric)),
-            new(Lowercases, nameof(PasswordOptions.RequireLowercase)),
-            new(Uppercases, nameof(PasswordOptions.RequireUppercase)),
-            new(Digits, nameof(PasswordOptions.RequireDigit))
-        };
-
-    private readonly OptionsValidator _optionsValidator = new(Requirements);
     private readonly CryptoRandom _random = new();
+    private readonly OptionsValidator _optionsValidator = new(Requirements);
+    private static readonly Requirement[] Requirements =
+    [
+        new(Digits, nameof(PasswordOptions.RequireDigit)),
+        new(Lowercases, nameof(PasswordOptions.RequireLowercase)),
+        new(Uppercases, nameof(PasswordOptions.RequireUppercase)),
+        new(NonAlphanumerics, nameof(PasswordOptions.RequireNonAlphanumeric))
+    ];
 
     public string GeneratePassword(PasswordOptions options, bool excludeNonRequiredChars = false)
     {
@@ -52,30 +50,21 @@ public class PasswordGenerator : IPasswordGenerator
     {
         foreach (var requirement in Requirements)
         {
-            if (requirement.IsRequired(options))
+            if (requirement.Required(options))
             {
                 password.InsertRandom(requirement.Chars);
             }
         }
     }
 
-    private void SatisfyLengthRequirements(
-        Password password,
-        PasswordOptions options,
-        bool excludeNonRequiredChars)
+    private void SatisfyLengthRequirements(Password password, PasswordOptions options, bool excludeNonRequiredChars)
     {
-        Requirement GetRandomRequirement() =>
-            Requirements[_random.Next(0, Requirements.Length)];
-
-        for (var i = password.Length;
-            i < options.RequiredLength || password.UniqueChars < options.RequiredUniqueChars;
-            i++)
+        for (var i = password.Length; i < options.RequiredLength || password.UniqueChars < options.RequiredUniqueChars; i++)
         {
             var requirement = GetRandomRequirement();
-
             if (excludeNonRequiredChars)
             {
-                while (!requirement.IsRequired(options))
+                while (!requirement.Required(options))
                 {
                     requirement = GetRandomRequirement();
                 }
@@ -83,5 +72,9 @@ public class PasswordGenerator : IPasswordGenerator
 
             password.InsertRandom(requirement.Chars);
         }
+
+        return;
+
+        Requirement GetRandomRequirement() => Requirements[_random.Next(0, Requirements.Length)];
     }
 }

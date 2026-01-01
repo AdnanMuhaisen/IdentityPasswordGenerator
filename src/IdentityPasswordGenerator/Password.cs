@@ -1,21 +1,14 @@
 ﻿namespace IdentityPasswordGenerator;
 
-internal class Password
+internal class Password(CryptoRandom random)
 {
-    private readonly List<char> _text = new();
-    private readonly CryptoRandom _random;
+    private readonly List<char> _content = [];
 
-    public Password(CryptoRandom random)
-    {
-        _random = random;
-    }
+    public int Length => _content.Count;
 
-    public int Length => _text.Count;
+    public int UniqueChars => _content.Distinct().Count();
 
-    public int UniqueChars => _text.Distinct().Count();
+    public void InsertRandom(string chars) => _content.Insert(random.Next(0, _content.Count), chars[random.Next(0, chars.Length)]);
 
-    public void InsertRandom(string chars) =>
-        _text.Insert(_random.Next(0, _text.Count), chars[_random.Next(0, chars.Length)]);
-
-    public override string ToString() => new(_text.ToArray());
+    public override string ToString() => new(_content.ToArray());
 }

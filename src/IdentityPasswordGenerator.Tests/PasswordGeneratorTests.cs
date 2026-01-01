@@ -7,8 +7,7 @@ namespace IdentityPasswordGenerator.Tests;
 
 public class PasswordGeneratorTests
 {
-    private static readonly bool[] BoolValues = new[] { false, true };
-
+    private static readonly bool[] BoolValues = [false, true];
     private readonly PasswordGenerator _passwordGenerator = new();
 
     [Fact]
@@ -17,16 +16,14 @@ public class PasswordGeneratorTests
         var options = new PasswordOptions
         {
             RequiredLength = 0,
+            RequireDigit = false,
             RequiredUniqueChars = 0,
-            RequireNonAlphanumeric = false,
             RequireLowercase = false,
             RequireUppercase = false,
-            RequireDigit = false
+            RequireNonAlphanumeric = false
         };
 
-        var exception = Assert.Throws<ArgumentException>(
-            () => _passwordGenerator.GeneratePassword(options, true));
-
+        var exception = Assert.Throws<ArgumentException>(() => _passwordGenerator.GeneratePassword(options, true));
         Assert.Equal(
             "At least one set of characters must be required if excludeNonRequiredChars is set to true! (Parameter 'options')",
             exception.Message);
@@ -35,33 +32,25 @@ public class PasswordGeneratorTests
     [Fact]
     public void GeneratePassword_RequiredUniqueCharsIsBiggerThanMaxUniqueChars_ThrowsException()
     {
-        var maxUniqueChars =
-            PasswordGenerator.NonAlphanumerics.Length + PasswordGenerator.Digits.Length;
-
+        var maxUniqueChars = PasswordGenerator.NonAlphanumerics.Length + PasswordGenerator.Digits.Length;
         var options = new PasswordOptions
         {
             RequiredLength = 0,
-            RequiredUniqueChars = maxUniqueChars + 1,
-            RequireNonAlphanumeric = true,
+            RequireDigit = true,
             RequireLowercase = false,
             RequireUppercase = false,
-            RequireDigit = true
+            RequireNonAlphanumeric = true,
+            RequiredUniqueChars = maxUniqueChars + 1
         };
 
-        var exception = Assert.Throws<ArgumentException>(
-            () => _passwordGenerator.GeneratePassword(options, true));
-
+        var exception = Assert.Throws<ArgumentException>(() => _passwordGenerator.GeneratePassword(options, true));
         Assert.Equal(
             $"The value of RequiredUniqueChars cannot be bigger than the maximum number of unique characters ({maxUniqueChars})! (Parameter 'options')",
             exception.Message);
     }
 
-    [Theory]
-    [MemberData(nameof(ValidOptions))]
-    public async Task GeneratePassword_ValidOptions_IsValid(
-        PasswordOptions options,
-        bool excludeNonRequiredChars,
-        IEnumerable<string> excludedChars)
+    [Theory, MemberData(nameof(ValidOptions))]
+    public async Task GeneratePassword_ValidOptions_IsValid(PasswordOptions options, bool excludeNonRequiredChars, IEnumerable<string> excludedChars)
     {
         var password = _passwordGenerator.GeneratePassword(options, excludeNonRequiredChars);
 
@@ -106,40 +95,36 @@ public class PasswordGeneratorTests
 
                             foreach (var excludeNonRequiredChars in BoolValues)
                             {
-                                if (!excludeNonRequiredChars
-                                    || requireNonAlphanumeric
-                                    || requireLowercase
-                                    || requireUppercase
-                                    || requireDigit)
+                                if (excludeNonRequiredChars && !requireNonAlphanumeric && !requireLowercase && !requireUppercase && !requireDigit)
                                 {
-                                    var excludedChars = new List<string>();
+                                    continue;
+                                }
 
-                                    if (excludeNonRequiredChars)
+                                var excludedChars = new List<string>();
+                                if (excludeNonRequiredChars)
+                                {
+                                    if (!requireNonAlphanumeric)
                                     {
-                                        if (!requireNonAlphanumeric)
-                                        {
-                                            excludedChars.Add(PasswordGenerator.NonAlphanumerics);
-                                        }
-                                        if (!requireLowercase)
-                                        {
-                                            excludedChars.Add(PasswordGenerator.Lowercases);
-                                        }
-                                        if (!requireUppercase)
-                                        {
-                                            excludedChars.Add(PasswordGenerator.Uppercases);
-                                        }
-                                        if (!requireDigit)
-                                        {
-                                            excludedChars.Add(PasswordGenerator.Digits);
-                                        }
+                                        excludedChars.Add(PasswordGenerator.NonAlphanumerics);
                                     }
 
-                                    data.Add(new object[] {
-                                        options,
-                                        excludeNonRequiredChars,
-                                        excludedChars
-                                    });
+                                    if (!requireLowercase)
+                                    {
+                                        excludedChars.Add(PasswordGenerator.Lowercases);
+                                    }
+
+                                    if (!requireUppercase)
+                                    {
+                                        excludedChars.Add(PasswordGenerator.Uppercases);
+                                    }
+
+                                    if (!requireDigit)
+                                    {
+                                        excludedChars.Add(PasswordGenerator.Digits);
+                                    }
                                 }
+
+                                data.Add([options, excludeNonRequiredChars, excludedChars]);
                             }
                         }
                     }
